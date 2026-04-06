@@ -1,0 +1,1152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Choice Experiment: Recreation Site — ESRM/ECON 235</title>
+<style>
+  :root {
+    --teal: #1B6B6D;
+    --teal-light: #e6f2f2;
+    --terra: #B85042;
+    --sage: #7BA07E;
+    --sage-light: #E8EEEA;
+    --charcoal: #2D2D2D;
+    --gold: #D4A017;
+    --cream: #FAF9F6;
+    --white: #ffffff;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Calibri, Arial, sans-serif;
+    background: var(--cream);
+    color: var(--charcoal);
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+  .container { max-width: 900px; margin: 0 auto; padding: 20px; }
+
+  /* ── Header ─────────────────────────────── */
+  .header {
+    background: var(--teal);
+    color: var(--cream);
+    padding: 30px 40px;
+    border-radius: 12px;
+    margin-bottom: 24px;
+  }
+  .header h1 { font-family: Georgia, serif; font-size: 1.8em; margin-bottom: 6px; }
+  .header .subtitle { font-size: 0.95em; opacity: 0.85; }
+  .header .course { font-size: 0.85em; opacity: 0.65; margin-top: 4px; }
+
+  /* ── Progress bar ──────────────────────── */
+  .progress-bar {
+    background: #ddd;
+    border-radius: 20px;
+    height: 10px;
+    margin: 16px 0 24px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    background: linear-gradient(90deg, var(--teal), var(--sage));
+    height: 100%;
+    border-radius: 20px;
+    transition: width 0.5s ease;
+  }
+  .progress-label {
+    font-size: 0.85em;
+    color: #777;
+    text-align: center;
+    margin-bottom: 6px;
+  }
+
+  /* ── Screens ────────────────────────────── */
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* ── Intro / cards / results ────────────── */
+  .intro-box, .results-section {
+    background: var(--white);
+    border-radius: 12px;
+    padding: 28px 32px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    margin-bottom: 24px;
+  }
+  .intro-box h2, .results-section h2 { font-family: Georgia, serif; color: var(--teal); margin-bottom: 14px; }
+  .results-section h3 { font-family: Georgia, serif; color: var(--teal); margin-bottom: 10px; font-size: 1.05em; }
+  .results-section p { font-size: 0.92em; margin-bottom: 12px; color: #555; }
+  .intro-box p { margin-bottom: 12px; font-size: 0.95em; }
+
+  .scenario {
+    background: var(--teal-light);
+    border-left: 4px solid var(--teal);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 20px 0;
+    font-size: 0.95em;
+  }
+  .attr-table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.9em; }
+  .attr-table th { background: var(--teal); color: white; padding: 10px 14px; text-align: left; font-weight: 600; }
+  .attr-table td { padding: 10px 14px; border-bottom: 1px solid #e0e0e0; }
+  .attr-table tr:nth-child(even) td { background: var(--sage-light); }
+
+  .cards-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .choice-card {
+    background: var(--white);
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+  }
+  .choice-card:hover { border-color: var(--teal); transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+  .choice-card.selected { border-color: var(--teal); background: var(--teal-light); box-shadow: 0 4px 16px rgba(27,107,109,0.2); }
+  .choice-card.selected::after {
+    content: '\2713'; position: absolute; top: 10px; right: 14px;
+    color: var(--teal); font-size: 1.4em; font-weight: bold;
+  }
+  .card-title { font-family: Georgia, serif; font-size: 1.05em; color: var(--teal); margin-bottom: 12px; text-align: center; font-weight: 700; }
+  .card-attr { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; font-size: 0.9em; }
+  .card-attr:last-child { border-bottom: none; }
+  .card-attr .label { color: #777; }
+  .card-attr .value { font-weight: 600; }
+  .card-attr .value.cost { color: var(--terra); }
+  .optout-card { background: #fafafa; }
+  .optout-card .card-title { color: #888; }
+
+  .btn {
+    display: inline-block; padding: 12px 32px; border: none; border-radius: 8px;
+    font-size: 1em; font-weight: 600; cursor: pointer; transition: all 0.2s;
+  }
+  .btn-primary { background: var(--teal); color: white; }
+  .btn-primary:hover { background: #155758; }
+  .btn-primary:disabled { background: #aaa; cursor: not-allowed; }
+  .btn-secondary { background: transparent; color: var(--teal); border: 2px solid var(--teal); }
+  .btn-secondary:hover { background: var(--teal-light); }
+  .btn-row { display: flex; justify-content: space-between; margin-top: 24px; }
+
+  .results-table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 0.9em; }
+  .results-table th { background: var(--teal); color: white; padding: 10px 14px; text-align: left; }
+  .results-table td { padding: 10px 14px; border-bottom: 1px solid #e0e0e0; }
+  .results-table tr:nth-child(even) td { background: #f8f8f8; }
+
+  .wtp-highlight {
+    background: var(--teal-light); border: 2px solid var(--teal); border-radius: 10px;
+    padding: 20px; text-align: center; margin: 20px 0;
+  }
+  .wtp-highlight .big-number { font-size: 2.2em; font-weight: 700; color: var(--teal); font-family: Georgia, serif; }
+  .wtp-highlight .label-text { font-size: 0.9em; color: #666; margin-top: 4px; }
+
+  .note-box {
+    background: #fff8e1; border-left: 4px solid var(--gold); padding: 14px 18px;
+    border-radius: 0 8px 8px 0; margin: 16px 0; font-size: 0.88em; color: #666;
+  }
+  .eqn {
+    font-family: 'Cambria Math', 'Times New Roman', serif; font-style: italic;
+    background: #f4f4f4; padding: 10px 16px; border-radius: 6px; margin: 10px 0;
+    font-size: 0.95em; overflow-x: auto; display: block;
+  }
+  .sig { font-weight: 700; }
+  .sig-yes { color: var(--teal); }
+  .sig-no { color: #999; }
+  .chart-container { margin: 16px 0; }
+  canvas { max-width: 100%; }
+  .footer-note { text-align: center; font-size: 0.8em; color: #aaa; margin-top: 30px; padding: 20px; }
+
+  /* ── Student ID input ──────────────────── */
+  .id-input {
+    font-size: 1.1em; padding: 10px 16px; border: 2px solid #ccc; border-radius: 8px;
+    width: 100%; max-width: 350px; margin: 12px 0;
+  }
+  .id-input:focus { border-color: var(--teal); outline: none; }
+
+  /* ── Submission banner ─────────────────── */
+  .submit-banner {
+    background: var(--sage); color: white; padding: 16px 24px; border-radius: 10px;
+    text-align: center; font-size: 1.1em; margin-bottom: 24px;
+  }
+  .submit-banner .check { font-size: 1.6em; margin-right: 8px; }
+
+  /* ── Instructor dashboard ──────────────── */
+  .dash-stat {
+    display: inline-block; background: var(--white); border: 2px solid var(--teal);
+    border-radius: 10px; padding: 16px 28px; text-align: center; margin: 8px 12px 8px 0;
+  }
+  .dash-stat .number { font-size: 2em; font-weight: 700; color: var(--teal); font-family: Georgia, serif; }
+  .dash-stat .stat-label { font-size: 0.82em; color: #777; }
+  .student-list {
+    max-height: 150px; overflow-y: auto; background: #f8f8f8; border-radius: 8px;
+    padding: 12px 16px; margin: 12px 0; font-size: 0.88em; color: #555;
+  }
+  .auto-badge {
+    display: inline-block; background: var(--sage); color: white; font-size: 0.75em;
+    padding: 3px 10px; border-radius: 12px; margin-left: 12px; vertical-align: middle;
+  }
+  .waiting-msg {
+    text-align: center; padding: 60px 20px; color: #999; font-size: 1.1em;
+  }
+  .waiting-msg .spinner {
+    display: inline-block; width: 30px; height: 30px; border: 3px solid #ddd;
+    border-top-color: var(--teal); border-radius: 50%; animation: spin 1s linear infinite;
+    margin-bottom: 12px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @media (max-width: 700px) { .cards-row { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="container">
+
+<!-- ══════════════════════════════════════════════════════════════════
+     CONFIGURATION — Paste your Google Apps Script URL below
+     ══════════════════════════════════════════════════════════════════ -->
+
+<!-- ═══════════════ HEADER ═══════════════ -->
+<div class="header">
+  <h1>Choice Experiment: Recreation Site Improvement</h1>
+  <div class="subtitle">A Classroom Demonstration of Stated Preference Valuation</div>
+  <div class="course">ESRM/ECON/ENVIR 235 — Introduction to Environmental Economics — Spring 2026</div>
+</div>
+
+<!-- ═══════════════ STUDENT: ID ENTRY ═══════════════ -->
+<div id="screen-id" class="screen active">
+  <div class="intro-box">
+    <h2>Before We Begin</h2>
+    <p>Enter your name or student ID so we can match your responses in the class dataset.</p>
+    <input type="text" class="id-input" id="student-id" placeholder="e.g., Jane D. or 2045678"
+           onkeyup="document.getElementById('btn-to-intro').disabled = !this.value.trim()">
+    <br>
+    <button class="btn btn-primary" id="btn-to-intro" disabled
+            onclick="setStudentId()">Continue</button>
+  </div>
+</div>
+
+<!-- ═══════════════ STUDENT: INTRO SCREEN ═══════════════ -->
+<div id="screen-intro" class="screen">
+  <div class="intro-box">
+    <h2>Welcome</h2>
+    <div class="scenario">
+      <strong>Scenario:</strong> Your county is considering improvements to a popular recreation lake.
+      Currently the lake has murky water, 2 miles of unmaintained trails, and no fish stocking program.
+      The county wants to know which improvements residents value most and how much they'd be willing
+      to pay through an annual household fee.
+    </div>
+    <p>You will be shown <strong>6 choice occasions</strong>. In each, you'll see two possible improvement
+    options (Site A and Site B) and an opt-out (keep the status quo). Choose the option you prefer most.</p>
+    <p>Each option is described by four attributes:</p>
+    <table class="attr-table">
+      <thead><tr><th>Attribute</th><th>Levels</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Water Clarity</strong></td><td>Murky, Moderate, Clear</td><td>Visibility depth in feet (2 ft, 8 ft, 15+ ft)</td></tr>
+        <tr><td><strong>Trail Miles</strong></td><td>2 mi, 5 mi, 10 mi</td><td>Total miles of maintained hiking/biking trail</td></tr>
+        <tr><td><strong>Fish Stocking</strong></td><td>None, Moderate, Trophy</td><td>Level of fish stocking program for anglers</td></tr>
+        <tr><td><strong>Annual Fee</strong></td><td>$0, $25, $50, $100, $150</td><td>Per-household annual fee to fund improvements</td></tr>
+      </tbody>
+    </table>
+    <div class="note-box">
+      <strong>Instructions:</strong> There are no right or wrong answers. Choose as if you were actually deciding
+      how to spend your household's money. If neither improvement is worth the fee, choose "No Improvement."
+    </div>
+    <div style="text-align:center; margin-top:20px;">
+      <button class="btn btn-primary" onclick="startExperiment()">Begin Choice Experiment</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ STUDENT: CHOICE SCREEN ═══════════════ -->
+<div id="screen-choice" class="screen">
+  <div class="progress-label" id="progress-label">Choice 1 of 6</div>
+  <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+  <div id="choice-container"></div>
+  <div class="btn-row">
+    <button class="btn btn-secondary" id="btn-back" onclick="prevChoice()" style="visibility:hidden;">Back</button>
+    <button class="btn btn-primary" id="btn-next" onclick="nextChoice()" disabled>Next</button>
+  </div>
+</div>
+
+<!-- ═══════════════ STUDENT: SUBMITTING ═══════════════ -->
+<div id="screen-submitting" class="screen">
+  <div class="intro-box" style="text-align:center; padding:60px;">
+    <div class="waiting-msg">
+      <div class="spinner"></div><br>
+      <span id="submit-status">Submitting your choices to the class dataset...</span>
+    </div>
+    <div class="progress-bar" style="max-width:400px; margin:20px auto;">
+      <div class="progress-fill" id="submit-progress" style="width:30%"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ STUDENT: RESULTS ═══════════════ -->
+<div id="screen-results" class="screen">
+  <div class="submit-banner">
+    <span class="check">&#10003;</span> Your choices have been submitted to the class dataset!
+    Watch the instructor's screen for pooled class results.
+  </div>
+
+  <div class="results-section">
+    <h2>Your Choice Summary</h2>
+    <div id="choice-summary"></div>
+  </div>
+
+  <div class="results-section">
+    <h2>Your Individual MNL Results</h2>
+    <p>These are estimated from <em>your 6 choices only</em> — treat them as illustrative.
+    The class-pooled estimates on the instructor's screen will have much more statistical power.</p>
+    <span class="eqn">V<sub>j</sub> = &beta;<sub>1</sub>&middot;WaterClarity + &beta;<sub>2</sub>&middot;Trails + &beta;<sub>3</sub>&middot;FishStocking + &beta;<sub>4</sub>&middot;Fee + &beta;<sub>ASC</sub>&middot;ASC</span>
+    <h3>Coefficient Estimates</h3>
+    <table class="results-table">
+      <thead><tr><th>Variable</th><th>Coeff</th><th>Std Err</th><th>z</th><th>p-value</th><th>Sig</th></tr></thead>
+      <tbody id="coef-body"></tbody>
+    </table>
+    <div class="note-box" id="model-fit"></div>
+    <div class="note-box" id="interpret-note"></div>
+  </div>
+
+  <div class="results-section">
+    <h2>Your Marginal WTP</h2>
+    <p>WTP = &minus;&beta;<sub>attribute</sub> / &beta;<sub>fee</sub>, scaled to the full attribute range.</p>
+    <table class="results-table">
+      <thead><tr><th>Improvement</th><th>WTP</th><th>95% CI</th><th>Detail</th></tr></thead>
+      <tbody id="wtp-body"></tbody>
+    </table>
+    <div class="chart-container"><canvas id="wtp-chart" height="260"></canvas></div>
+  </div>
+
+  <div class="results-section">
+    <h2>Your Total WTP</h2>
+    <p>Total WTP for the full package (clear water, 10 mi trails, trophy stocking) vs. opt-out,
+    including the ASC (baseline preference for improvement over status quo):</p>
+    <div class="wtp-highlight">
+      <div class="big-number" id="total-wtp">$—</div>
+      <div class="label-text">Your annual WTP for the full improvement package</div>
+    </div>
+    <span class="eqn" id="total-wtp-formula"></span>
+  </div>
+
+  <div style="text-align:center; margin: 20px 0;">
+    <button class="btn btn-secondary" onclick="resetStudent()">Start Over</button>
+  </div>
+</div>
+
+<!-- ═══════════════ INSTRUCTOR: DASHBOARD ═══════════════ -->
+<div id="screen-instructor" class="screen">
+  <div class="results-section" style="text-align:center;">
+    <h2>Instructor Dashboard</h2>
+    <p>Responses are fetched from the linked Google Sheet. Share the student URL with the class.</p>
+    <div style="margin: 16px 0;">
+      <div class="dash-stat">
+        <div class="number" id="resp-count">0</div>
+        <div class="stat-label">Responses</div>
+      </div>
+      <div class="dash-stat">
+        <div class="number" id="obs-count">0</div>
+        <div class="stat-label">Choice observations</div>
+      </div>
+    </div>
+    <div>
+      <button class="btn btn-primary" onclick="fetchAndEstimate()" id="btn-refresh">Refresh &amp; Estimate</button>
+      <label style="margin-left:16px; font-size:0.9em; color:#555;">
+        <input type="checkbox" id="auto-refresh" onchange="toggleAutoRefresh()"> Auto-refresh (5s)
+      </label>
+      <span class="auto-badge" id="auto-badge" style="display:none;">LIVE</span>
+    </div>
+  </div>
+
+  <div class="results-section">
+    <h3>Submitted Students</h3>
+    <div class="student-list" id="student-list"><em>No responses yet</em></div>
+  </div>
+
+  <div id="dash-waiting" class="results-section">
+    <div class="waiting-msg">
+      <div class="spinner"></div><br>
+      Waiting for student responses...<br>
+      <span style="font-size:0.85em; color:#bbb;">Share the page URL with students to begin</span>
+    </div>
+  </div>
+
+  <div id="dash-results" style="display:none;">
+    <div class="results-section">
+      <h2>Pooled MNL Estimates</h2>
+      <p>Conditional logit estimated on the full class dataset via Newton-Raphson MLE.</p>
+      <span class="eqn">V<sub>j</sub> = &beta;<sub>1</sub>&middot;WaterClarity + &beta;<sub>2</sub>&middot;Trails + &beta;<sub>3</sub>&middot;FishStocking + &beta;<sub>4</sub>&middot;Fee + &beta;<sub>ASC</sub>&middot;ASC</span>
+      <h3>Coefficient Estimates</h3>
+      <table class="results-table">
+        <thead><tr><th>Variable</th><th>Coeff</th><th>Std Err</th><th>z</th><th>p-value</th><th>Sig</th></tr></thead>
+        <tbody id="dash-coef-body"></tbody>
+      </table>
+      <div class="note-box" id="dash-model-fit"></div>
+      <div class="note-box" id="dash-interpret"></div>
+    </div>
+
+    <div class="results-section">
+      <h2>Class Marginal WTP</h2>
+      <p>WTP = &minus;&beta;<sub>attribute</sub> / &beta;<sub>fee</sub>, scaled to the full attribute range. Standard errors via delta method.</p>
+      <table class="results-table">
+        <thead><tr><th>Improvement</th><th>WTP</th><th>95% CI</th><th>Detail</th></tr></thead>
+        <tbody id="dash-wtp-body"></tbody>
+      </table>
+      <div class="chart-container"><canvas id="dash-wtp-chart" height="260"></canvas></div>
+    </div>
+
+    <div class="results-section">
+      <h2>Class Total WTP</h2>
+      <p>Total WTP for the full package vs. opt-out, including ASC:</p>
+      <div class="wtp-highlight">
+        <div class="big-number" id="dash-total-wtp">$—</div>
+        <div class="label-text">Annual household WTP for full improvement package (class average)</div>
+      </div>
+      <span class="eqn" id="dash-total-wtp-formula"></span>
+      <div class="note-box">
+        <strong>Policy implication:</strong> If total WTP exceeds the cost per household of providing
+        the improvements, the project passes a benefit-cost test.
+        <span id="dash-policy"></span>
+      </div>
+    </div>
+
+    <div class="results-section">
+      <h2>Discussion Questions</h2>
+      <div style="padding-left: 16px; font-size: 0.92em;">
+        <p style="margin-bottom: 10px;"><strong>1.</strong> Your responses were hypothetical — no real money changed hands. How might <em>hypothetical bias</em> affect these WTP estimates? Would you expect them to be too high or too low?</p>
+        <p style="margin-bottom: 10px;"><strong>2.</strong> We estimated a conditional logit, which assumes <em>independence of irrelevant alternatives</em> (IIA). What does IIA mean, and when might it be violated in environmental choice experiments?</p>
+        <p style="margin-bottom: 10px;"><strong>3.</strong> The fee attribute lets us calculate WTP in dollars. What if we hadn't included a monetary attribute — could we still estimate WTP? What would we lose?</p>
+        <p style="margin-bottom: 10px;"><strong>4.</strong> How does this choice experiment approach compare to the travel cost method from earlier in the course? What types of value can choice experiments capture that revealed preference methods cannot?</p>
+        <p style="margin-bottom: 10px;"><strong>5.</strong> We estimated a single set of &beta; coefficients for the whole class. But preferences clearly differ. What model extension would allow for preference heterogeneity, and how would it change our WTP estimates?</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Setup instructions ── -->
+  <div class="results-section" style="background:#f0f6f6; border-left:4px solid var(--teal);">
+    <details>
+      <summary style="cursor:pointer; font-weight:bold; color:var(--teal); font-family:Georgia,serif; font-size:1.1em;">
+        Setup Instructions (one-time)
+      </summary>
+      <div style="margin-top:12px; font-size:0.9em; line-height:1.8;">
+        <p><strong>Step 1 — Create a Google Sheet:</strong> Go to <a href="https://sheets.google.com" target="_blank">sheets.google.com</a>,
+        create a new blank spreadsheet, and name it "235 Choice Experiment." In row 1, add these headers:
+        <code>Timestamp</code>, <code>StudentID</code>, <code>Choice1</code>, <code>Choice2</code>,
+        <code>Choice3</code>, <code>Choice4</code>, <code>Choice5</code>, <code>Choice6</code>.</p>
+
+        <p><strong>Step 2 — Add the Apps Script:</strong> In the spreadsheet, go to
+        <strong>Extensions &rarr; Apps Script</strong>. Delete the default code and paste the following:</p>
+        <pre style="background:#1e1e1e; color:#d4d4d4; padding:16px; border-radius:8px; overflow-x:auto; font-size:0.82em; line-height:1.5;"><code>function doPost(e) {
+  var lock = LockService.getScriptLock();
+  lock.tryLock(10000);
+  var sheet = SpreadsheetApp.getActiveSpreadsheet()
+    .getActiveSheet();
+  // Handle both form POST (e.parameter.data)
+  // and raw POST (e.postData.contents)
+  var raw = e.parameter.data || e.postData.contents;
+  var data = JSON.parse(raw);
+  sheet.appendRow([
+    new Date().toISOString(),
+    data.studentId,
+    data.choices[0], data.choices[1],
+    data.choices[2], data.choices[3],
+    data.choices[4], data.choices[5]
+  ]);
+  lock.releaseLock();
+  return ContentService.createTextOutput(
+    JSON.stringify({status:'ok'})
+  ).setMimeType(ContentService.MimeType.JSON);
+}
+
+function doGet(e) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet()
+    .getActiveSheet();
+  var data = sheet.getDataRange().getValues();
+  var rows = [];
+  for (var i = 1; i < data.length; i++) {
+    rows.push({
+      studentId: data[i][1],
+      choices: [
+        parseInt(data[i][2]),
+        parseInt(data[i][3]),
+        parseInt(data[i][4]),
+        parseInt(data[i][5]),
+        parseInt(data[i][6]),
+        parseInt(data[i][7])
+      ]
+    });
+  }
+  var json = JSON.stringify(rows);
+  var cb = (e.parameter || {}).callback;
+  if (cb) {
+    return ContentService
+      .createTextOutput(cb + '(' + json + ')')
+      .setMimeType(
+        ContentService.MimeType.JAVASCRIPT);
+  }
+  return ContentService
+    .createTextOutput(json)
+    .setMimeType(ContentService.MimeType.JSON);
+}</code></pre>
+
+        <div class="note-box" style="margin-top:8px;">
+          <strong>Important:</strong> Copy this code from the <em>rendered page</em> (select and Ctrl+C),
+          NOT from the raw HTML source. The raw source contains HTML entities like <code>&amp;lt;</code>
+          that will break the script if pasted directly.
+        </div>
+
+        <p><strong>Step 3 — Deploy:</strong> Click <strong>Deploy &rarr; New deployment</strong>.
+        Set type to <strong>Web app</strong>. Set "Execute as" to <strong>Me</strong> and
+        "Who has access" to <strong>Anyone</strong>. Click <strong>Deploy</strong>.
+        Authorize when prompted (click through the "unsafe app" warning — it's your own script).
+        Copy the <strong>Web app URL</strong>.</p>
+
+        <p><strong>Step 4 — Configure this page:</strong> Open this HTML file in a text editor.
+        Find the line near the top of the <code>&lt;script&gt;</code> section that says:<br>
+        <code>const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx0CB403nEK0YXCd8_mJbKdaKs3pVxW0pOi3NowgkeauHregB8LiYHkRTAilBg6WbU6/exec';</code><br>
+        Replace the placeholder with your URL. Save.</p>
+
+        <p><strong>Step 5 — Host &amp; share:</strong> Upload to GitHub Pages (free) or any web host.
+        Students open the page URL to take the experiment. You open the same URL with
+        <code>?mode=instructor</code> appended to see the live dashboard.</p>
+
+        <p><strong>To reset between sections:</strong> Delete the data rows in your Google Sheet (keep the header).
+        Refresh the instructor dashboard.</p>
+      </div>
+    </details>
+  </div>
+</div>
+
+<div class="footer-note">
+  ESRM/ECON/ENVIR 235 — Introduction to Environmental Economics — Prof. Rabotyagov — Spring 2026<br>
+  Choice experiment with live classroom data collection and pooled MNL estimation.
+</div>
+
+</div><!-- end container -->
+
+<script>
+// ════════════════════════════════════════════════════════════════════
+// CONFIGURATION
+// ════════════════════════════════════════════════════════════════════
+const SCRIPT_URL = 'PASTE_YOUR_APPS_SCRIPT_URL_HERE';
+
+// ════════════════════════════════════════════════════════════════════
+// MODE DETECTION
+// ════════════════════════════════════════════════════════════════════
+const params = new URLSearchParams(window.location.search);
+const IS_INSTRUCTOR = params.get('mode') === 'instructor';
+
+// ════════════════════════════════════════════════════════════════════
+// EXPERIMENTAL DESIGN (same as v1)
+// ════════════════════════════════════════════════════════════════════
+const WATER = { 'Murky': 0, 'Moderate': 1, 'Clear': 2 };
+const TRAILS = { '2 mi': 2, '5 mi': 5, '10 mi': 10 };
+const FISH = { 'None': 0, 'Moderate': 1, 'Trophy': 2 };
+
+const DESIGN = [
+  [{ water:'Clear', trails:'10 mi', fish:'Trophy', fee:100 }, { water:'Moderate', trails:'5 mi', fish:'None', fee:25 }],
+  [{ water:'Moderate', trails:'10 mi', fish:'Moderate', fee:50 }, { water:'Clear', trails:'2 mi', fish:'None', fee:150 }],
+  [{ water:'Clear', trails:'5 mi', fish:'None', fee:50 }, { water:'Murky', trails:'10 mi', fish:'Trophy', fee:25 }],
+  [{ water:'Murky', trails:'5 mi', fish:'Trophy', fee:150 }, { water:'Clear', trails:'10 mi', fish:'Moderate', fee:100 }],
+  [{ water:'Moderate', trails:'2 mi', fish:'Trophy', fee:25 }, { water:'Murky', trails:'5 mi', fish:'Moderate', fee:100 }],
+  [{ water:'Clear', trails:'5 mi', fish:'Moderate', fee:150 }, { water:'Moderate', trails:'10 mi', fish:'Trophy', fee:50 }]
+];
+const STATUS_QUO = { water:'Murky', trails:'2 mi', fish:'None', fee:0 };
+
+// ════════════════════════════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════════════════════════════
+let studentId = '';
+let currentChoice = 0;
+let choices = new Array(DESIGN.length).fill(null);
+let autoRefreshTimer = null;
+
+// ════════════════════════════════════════════════════════════════════
+// INITIALIZATION
+// ════════════════════════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  // Hide all screens
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+
+  if (IS_INSTRUCTOR) {
+    document.getElementById('screen-instructor').classList.add('active');
+    // Auto-fetch on load
+    fetchAndEstimate();
+  } else {
+    document.getElementById('screen-id').classList.add('active');
+  }
+});
+
+// ════════════════════════════════════════════════════════════════════
+// UI HELPERS
+// ════════════════════════════════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+// ════════════════════════════════════════════════════════════════════
+// STUDENT FLOW
+// ════════════════════════════════════════════════════════════════════
+function setStudentId() {
+  studentId = document.getElementById('student-id').value.trim();
+  if (!studentId) return;
+  showScreen('intro');
+}
+
+function startExperiment() {
+  currentChoice = 0;
+  choices.fill(null);
+  showScreen('choice');
+  renderChoice();
+}
+
+function renderChoice() {
+  const occ = DESIGN[currentChoice];
+  const container = document.getElementById('choice-container');
+  document.getElementById('progress-label').textContent = `Choice ${currentChoice + 1} of ${DESIGN.length}`;
+  document.getElementById('progress-fill').style.width = `${(currentChoice / DESIGN.length) * 100}%`;
+  document.getElementById('btn-back').style.visibility = currentChoice > 0 ? 'visible' : 'hidden';
+  document.getElementById('btn-next').disabled = choices[currentChoice] === null;
+  document.getElementById('btn-next').textContent = currentChoice === DESIGN.length - 1 ? 'Submit Choices' : 'Next';
+
+  function makeCard(option, title, idx) {
+    const sel = choices[currentChoice] === idx ? 'selected' : '';
+    const isOpt = idx === 2;
+    return `
+      <div class="choice-card ${isOpt ? 'optout-card' : ''} ${sel}" onclick="selectOption(${idx})">
+        <div class="card-title">${title}</div>
+        <div class="card-attr"><span class="label">Water Clarity</span><span class="value">${option.water}</span></div>
+        <div class="card-attr"><span class="label">Trail Miles</span><span class="value">${option.trails}</span></div>
+        <div class="card-attr"><span class="label">Fish Stocking</span><span class="value">${option.fish}</span></div>
+        <div class="card-attr"><span class="label">Annual Fee</span><span class="value cost">$${option.fee}/yr</span></div>
+      </div>`;
+  }
+
+  container.innerHTML = `
+    <div class="choice-occasion">
+      <h3>Choice Occasion ${currentChoice + 1}</h3>
+      <p style="font-size:0.9em; color:#666; margin-bottom:14px;">Which option do you prefer? Click to select.</p>
+      <div class="cards-row">
+        ${makeCard(occ[0], 'Site A', 0)}
+        ${makeCard(occ[1], 'Site B', 1)}
+        ${makeCard(STATUS_QUO, 'No Improvement', 2)}
+      </div>
+    </div>`;
+}
+
+function selectOption(idx) {
+  choices[currentChoice] = idx;
+  renderChoice();
+}
+
+function nextChoice() {
+  if (choices[currentChoice] === null) return;
+  if (currentChoice < DESIGN.length - 1) {
+    currentChoice++;
+    renderChoice();
+  } else {
+    submitChoices();
+  }
+}
+
+function prevChoice() {
+  if (currentChoice > 0) { currentChoice--; renderChoice(); }
+}
+
+// ════════════════════════════════════════════════════════════════════
+// SUBMIT TO GOOGLE SHEET
+// ════════════════════════════════════════════════════════════════════
+async function submitChoices() {
+  showScreen('submitting');
+  const progEl = document.getElementById('submit-progress');
+  const statusEl = document.getElementById('submit-status');
+
+  progEl.style.width = '30%';
+  statusEl.textContent = 'Encoding your choices...';
+  await sleep(300);
+
+  const payload = { studentId: studentId, choices: [...choices] };
+
+  progEl.style.width = '60%';
+  statusEl.textContent = 'Sending to class dataset...';
+
+  // Use hidden iframe + form POST to avoid CORS/redirect issues with Apps Script
+  try {
+    let iframe = document.getElementById('submit-frame');
+    if (!iframe) {
+      iframe = document.createElement('iframe');
+      iframe.id = 'submit-frame';
+      iframe.name = 'submit-frame';
+      iframe.style.display = 'none';
+      document.body.appendChild(iframe);
+    }
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = SCRIPT_URL;
+    form.target = 'submit-frame';
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'data';
+    input.value = JSON.stringify(payload);
+    form.appendChild(input);
+    document.body.appendChild(form);
+    form.submit();
+    form.remove();
+  } catch (err) {
+    console.warn('Submission may have failed:', err);
+  }
+
+  progEl.style.width = '80%';
+  statusEl.textContent = 'Running your individual estimation...';
+  await sleep(400);
+
+  // Run individual estimation
+  const { X, y } = buildDataMatrix(choices);
+  const results = estimateMNL(X, y, 0.5); // ridge for individual
+
+  progEl.style.width = '100%';
+  statusEl.textContent = 'Done!';
+  await sleep(300);
+
+  displayStudentResults(results, X, y);
+  showScreen('results');
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function resetStudent() {
+  choices.fill(null);
+  currentChoice = 0;
+  showScreen('id');
+}
+
+// ════════════════════════════════════════════════════════════════════
+// MNL ENCODING
+// ════════════════════════════════════════════════════════════════════
+function encodeOption(opt, isOptOut) {
+  return [
+    WATER[opt.water], TRAILS[opt.trails], FISH[opt.fish],
+    opt.fee, isOptOut ? 0 : 1
+  ];
+}
+
+function buildDataMatrix(choiceArray) {
+  const X = [], y = [];
+  for (let t = 0; t < DESIGN.length; t++) {
+    X.push([
+      encodeOption(DESIGN[t][0], false),
+      encodeOption(DESIGN[t][1], false),
+      encodeOption(STATUS_QUO, true)
+    ]);
+    y.push(choiceArray[t]);
+  }
+  return { X, y };
+}
+
+// Build pooled data matrix from multiple respondents
+function buildPooledDataMatrix(allResponses) {
+  const X = [], y = [];
+  for (const resp of allResponses) {
+    for (let t = 0; t < DESIGN.length; t++) {
+      X.push([
+        encodeOption(DESIGN[t][0], false),
+        encodeOption(DESIGN[t][1], false),
+        encodeOption(STATUS_QUO, true)
+      ]);
+      y.push(resp.choices[t]);
+    }
+  }
+  return { X, y };
+}
+
+// ════════════════════════════════════════════════════════════════════
+// MULTINOMIAL LOGIT ESTIMATION (Newton-Raphson MLE)
+// ════════════════════════════════════════════════════════════════════
+function estimateMNL(X, y, lambda) {
+  const K = 5;
+  let beta = [0.3, 0.03, 0.2, -0.005, 0.3];
+  const maxIter = 200;
+  const tol = 1e-6;
+
+  for (let iter = 0; iter < maxIter; iter++) {
+    const { grad, hess, ll } = computeGradHess(beta, X, y);
+
+    // Ridge penalty
+    for (let k = 0; k < K; k++) {
+      grad[k] -= lambda * beta[k];
+      hess[k][k] -= lambda;
+    }
+
+    const Hinv = invertMatrix(hess);
+    const step = Hinv.map(row => row.reduce((s, h, k) => s + h * grad[k], 0));
+
+    // Line search
+    let stepSize = 1.0;
+    const curPLL = ll - 0.5 * lambda * beta.reduce((s, b) => s + b * b, 0);
+    for (let ls = 0; ls < 12; ls++) {
+      const nb = beta.map((b, k) => b - stepSize * step[k]);
+      const nll = logLikelihood(nb, X, y) - 0.5 * lambda * nb.reduce((s, b) => s + b * b, 0);
+      if (nll >= curPLL - 1e-10) break;
+      stepSize *= 0.5;
+    }
+
+    let maxChange = 0;
+    const newBeta = beta.map((b, k) => b - stepSize * step[k]);
+    for (let k = 0; k < K; k++) maxChange = Math.max(maxChange, Math.abs(newBeta[k] - beta[k]));
+    beta = newBeta;
+    if (maxChange < tol) break;
+  }
+
+  // SEs from unpenalized information matrix
+  const { hess: H } = computeGradHess(beta, X, y);
+  const negHinv = invertMatrix(H.map(row => row.map(v => -v)));
+  const se = negHinv.map((row, i) => Math.sqrt(Math.max(row[i], 1e-10)));
+
+  const ll = logLikelihood(beta, X, y);
+  const ll0 = X.length * Math.log(1 / 3);
+  const rho2 = 1 - ll / ll0;
+
+  return { beta, se, ll, ll0, rho2, nObs: X.length };
+}
+
+function logLikelihood(beta, X, y) {
+  let ll = 0;
+  for (let t = 0; t < X.length; t++) {
+    const V = X[t].map(x => x.reduce((s, xi, k) => s + beta[k] * xi, 0));
+    const maxV = Math.max(...V);
+    const expV = V.map(v => Math.exp(v - maxV));
+    const sumExp = expV.reduce((a, b) => a + b, 0);
+    ll += Math.log(Math.max(expV[y[t]] / sumExp, 1e-300));
+  }
+  return ll;
+}
+
+function computeGradHess(beta, X, y) {
+  const K = beta.length;
+  const grad = new Array(K).fill(0);
+  const hess = Array.from({ length: K }, () => new Array(K).fill(0));
+  let ll = 0;
+
+  for (let t = 0; t < X.length; t++) {
+    const V = X[t].map(x => x.reduce((s, xi, k) => s + beta[k] * xi, 0));
+    const maxV = Math.max(...V);
+    const expV = V.map(v => Math.exp(v - maxV));
+    const sumExp = expV.reduce((a, b) => a + b, 0);
+    const probs = expV.map(e => e / sumExp);
+    ll += Math.log(Math.max(probs[y[t]], 1e-300));
+
+    for (let k = 0; k < K; k++) {
+      let eXk = 0;
+      for (let j = 0; j < X[t].length; j++) eXk += probs[j] * X[t][j][k];
+      grad[k] += X[t][y[t]][k] - eXk;
+    }
+    for (let k1 = 0; k1 < K; k1++) {
+      for (let k2 = k1; k2 < K; k2++) {
+        let eXX = 0, eX1 = 0, eX2 = 0;
+        for (let j = 0; j < X[t].length; j++) {
+          eXX += probs[j] * X[t][j][k1] * X[t][j][k2];
+          eX1 += probs[j] * X[t][j][k1];
+          eX2 += probs[j] * X[t][j][k2];
+        }
+        hess[k1][k2] -= (eXX - eX1 * eX2);
+        if (k1 !== k2) hess[k2][k1] = hess[k1][k2];
+      }
+    }
+  }
+  return { grad, hess, ll };
+}
+
+function invertMatrix(M) {
+  const n = M.length;
+  const aug = M.map((row, i) => [...row, ...Array.from({ length: n }, (_, j) => i === j ? 1 : 0)]);
+  for (let i = 0; i < n; i++) {
+    let maxRow = i;
+    for (let k = i + 1; k < n; k++) if (Math.abs(aug[k][i]) > Math.abs(aug[maxRow][i])) maxRow = k;
+    [aug[i], aug[maxRow]] = [aug[maxRow], aug[i]];
+    if (Math.abs(aug[i][i]) < 1e-12) aug[i][i] = 1e-8;
+    const pivot = aug[i][i];
+    for (let j = 0; j < 2 * n; j++) aug[i][j] /= pivot;
+    for (let k = 0; k < n; k++) {
+      if (k !== i) {
+        const f = aug[k][i];
+        for (let j = 0; j < 2 * n; j++) aug[k][j] -= f * aug[i][j];
+      }
+    }
+  }
+  return aug.map(row => row.slice(n));
+}
+
+function normalCDF(x) {
+  const a = 0.2316419, b1 = 0.319381530, b2 = -0.356563782;
+  const b3 = 1.781477937, b4 = -1.821255978, b5 = 1.330274429;
+  const t = 1 / (1 + a * Math.abs(x));
+  const pdf = Math.exp(-0.5 * x * x) / Math.sqrt(2 * Math.PI);
+  const c = 1 - pdf * (b1*t + b2*t*t + b3*t*t*t + b4*t*t*t*t + b5*t*t*t*t*t);
+  return x >= 0 ? c : 1 - c;
+}
+
+// ════════════════════════════════════════════════════════════════════
+// STUDENT RESULTS DISPLAY
+// ════════════════════════════════════════════════════════════════════
+function displayStudentResults(results, X, y) {
+  const { beta, se, ll, ll0, rho2 } = results;
+  const varNames = ['Water Clarity (0-2)', 'Trail Miles (2-10)', 'Fish Stocking (0-2)', 'Annual Fee ($)', 'ASC (improvement)'];
+
+  // Choice summary
+  const summaryDiv = document.getElementById('choice-summary');
+  const choiceLabels = ['Site A', 'Site B', 'No Improvement'];
+  let html = '<table class="results-table"><thead><tr><th>Occasion</th><th>Site A</th><th>Site B</th><th>Your Choice</th></tr></thead><tbody>';
+  for (let t = 0; t < DESIGN.length; t++) {
+    const a = DESIGN[t][0], b = DESIGN[t][1];
+    html += `<tr><td>${t+1}</td><td>${a.water}, ${a.trails}, ${a.fish}, $${a.fee}</td>
+      <td>${b.water}, ${b.trails}, ${b.fish}, $${b.fee}</td>
+      <td><strong>${choiceLabels[choices[t]]}</strong></td></tr>`;
+  }
+  html += '</tbody></table>';
+  summaryDiv.innerHTML = html;
+
+  // Coefficients
+  displayCoefTable('coef-body', beta, se, varNames);
+  document.getElementById('model-fit').innerHTML =
+    `Log-likelihood: ${ll.toFixed(3)} | Null LL: ${ll0.toFixed(3)} | McFadden &rho;&sup2;: ${rho2.toFixed(3)} | N: ${X.length} obs | Alternatives: 3`;
+
+  const feeCoef = beta[3];
+  document.getElementById('interpret-note').innerHTML =
+    `<strong>Interpretation:</strong> With only 6 observations from one respondent, these are illustrative. ` +
+    `Fee coefficient is ${feeCoef < 0 ? 'negative (as expected)' : 'positive (unexpected!)'} — ` +
+    `${feeCoef < 0 ? 'allowing WTP calculation.' : 'suggesting insufficient data.'} ` +
+    `Ridge regularization (&lambda;=0.5) prevents extreme estimates.`;
+
+  // WTP
+  displayWTPTable('wtp-body', 'wtp-chart', 'total-wtp', 'total-wtp-formula', null, beta, se);
+}
+
+// ════════════════════════════════════════════════════════════════════
+// SHARED RESULTS RENDERING
+// ════════════════════════════════════════════════════════════════════
+function displayCoefTable(bodyId, beta, se, varNames) {
+  const body = document.getElementById(bodyId);
+  body.innerHTML = '';
+  for (let k = 0; k < beta.length; k++) {
+    const z = beta[k] / se[k];
+    const p = 2 * (1 - normalCDF(Math.abs(z)));
+    const sigStr = p < 0.01 ? '***' : p < 0.05 ? '**' : p < 0.10 ? '*' : '';
+    body.innerHTML += `<tr>
+      <td>${varNames[k]}</td><td>${beta[k].toFixed(4)}</td><td>${se[k].toFixed(4)}</td>
+      <td>${z.toFixed(3)}</td><td>${p.toFixed(4)}</td>
+      <td class="sig ${sigStr ? 'sig-yes' : 'sig-no'}">${sigStr || 'n.s.'}</td></tr>`;
+  }
+}
+
+function displayWTPTable(bodyId, chartId, totalId, formulaId, policyId, beta, se) {
+  const body = document.getElementById(bodyId);
+  body.innerHTML = '';
+  const feeCoef = beta[3];
+
+  const attrInfo = [
+    { name: 'Water: Murky \u2192 Clear', units: 2, k: 0 },
+    { name: 'Trails: 2 mi \u2192 10 mi', units: 8, k: 1 },
+    { name: 'Fish: None \u2192 Trophy', units: 2, k: 2 }
+  ];
+
+  const wtpValues = [], wtpLabels = [];
+
+  for (const attr of attrInfo) {
+    if (Math.abs(feeCoef) > 1e-8) {
+      const mwtp = -beta[attr.k] / feeCoef;
+      const total = mwtp * attr.units;
+      const seWTP = Math.abs(1 / feeCoef) * Math.sqrt(
+        se[attr.k] ** 2 + (beta[attr.k] / feeCoef) ** 2 * se[3] ** 2
+      );
+      const totalSE = seWTP * attr.units;
+      wtpValues.push(total);
+      wtpLabels.push(attr.name);
+      body.innerHTML += `<tr><td>${attr.name}</td>
+        <td><strong>$${total.toFixed(2)}</strong>/yr</td>
+        <td>[$${(total - 1.96*totalSE).toFixed(2)}, $${(total + 1.96*totalSE).toFixed(2)}]</td>
+        <td>$${mwtp.toFixed(2)}/unit &times; ${attr.units} units</td></tr>`;
+    } else {
+      wtpValues.push(0); wtpLabels.push(attr.name);
+      body.innerHTML += `<tr><td>${attr.name}</td><td colspan="3">Cannot compute (fee &asymp; 0)</td></tr>`;
+    }
+  }
+
+  // ASC
+  let ascWTP = 0;
+  if (Math.abs(feeCoef) > 1e-8) {
+    ascWTP = -beta[4] / feeCoef;
+    const ascSE = Math.abs(1 / feeCoef) * Math.sqrt(
+      se[4] ** 2 + (beta[4] / feeCoef) ** 2 * se[3] ** 2
+    );
+    body.innerHTML += `<tr style="border-top:2px solid #1B6B6D;">
+      <td>ASC (improvement vs. opt-out)</td>
+      <td><strong>$${ascWTP.toFixed(2)}</strong>/yr</td>
+      <td>[$${(ascWTP - 1.96*ascSE).toFixed(2)}, $${(ascWTP + 1.96*ascSE).toFixed(2)}]</td>
+      <td>Baseline preference for action vs. status quo</td></tr>`;
+  }
+
+  const totalWTP = wtpValues.reduce((a, b) => a + b, 0) + ascWTP;
+  document.getElementById(totalId).textContent = `$${totalWTP.toFixed(2)}/year`;
+  document.getElementById(formulaId).innerHTML =
+    `Total WTP = WTP<sub>water</sub> + WTP<sub>trails</sub> + WTP<sub>fish</sub> + WTP<sub>ASC</sub> = ` +
+    `$${wtpValues[0].toFixed(2)} + $${wtpValues[1].toFixed(2)} + $${wtpValues[2].toFixed(2)} + $${ascWTP.toFixed(2)} = <strong>$${totalWTP.toFixed(2)}</strong>`;
+
+  if (policyId) {
+    const note = totalWTP > 100
+      ? `At $${totalWTP.toFixed(0)}/household/year, the full improvement package would likely pass a benefit-cost test if implementation costs are moderate.`
+      : totalWTP > 0
+      ? `At $${totalWTP.toFixed(0)}/household/year, feasibility depends on implementation costs.`
+      : `Negative total WTP suggests the class overall does not value the full package enough.`;
+    document.getElementById(policyId).textContent = ' ' + note;
+  }
+
+  // Bar chart
+  wtpLabels.push('ASC (vs. opt-out)');
+  wtpValues.push(ascWTP);
+  drawWTPChart(chartId, wtpLabels, wtpValues);
+}
+
+function drawWTPChart(canvasId, labels, values) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  canvas.width = canvas.parentElement.offsetWidth || 800;
+  canvas.height = 260;
+
+  const maxAbs = Math.max(Math.abs(Math.min(...values, 0)), Math.max(...values, 1), 1);
+  const chartLeft = 180, chartRight = canvas.width - 50;
+  const chartWidth = chartRight - chartLeft;
+  const barHeight = 35, gap = 14, startY = 30;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  const zeroX = chartLeft + chartWidth * (maxAbs / (2 * maxAbs));
+  ctx.strokeStyle = '#ccc'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(zeroX, startY - 10);
+  ctx.lineTo(zeroX, startY + labels.length * (barHeight + gap)); ctx.stroke();
+  ctx.fillStyle = '#999'; ctx.font = '11px Calibri, sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText('$0', zeroX, startY - 14);
+
+  for (let i = 0; i < labels.length; i++) {
+    const y = startY + i * (barHeight + gap);
+    const val = values[i];
+    const barW = (val / maxAbs) * (chartWidth / 2);
+
+    ctx.fillStyle = '#444'; ctx.font = '13px Calibri, sans-serif'; ctx.textAlign = 'right';
+    ctx.fillText(labels[i], chartLeft - 10, y + barHeight / 2 + 4);
+
+    ctx.fillStyle = val >= 0 ? '#1B6B6D' : '#B85042';
+    const x = val >= 0 ? zeroX : zeroX + barW;
+    ctx.fillRect(x, y, Math.abs(barW), barHeight);
+
+    ctx.fillStyle = '#333'; ctx.font = 'bold 12px Calibri, sans-serif'; ctx.textAlign = 'left';
+    const labelX = val >= 0 ? zeroX + barW + 6 : zeroX + barW - 6;
+    if (val < 0) ctx.textAlign = 'right';
+    ctx.fillText('$' + val.toFixed(0), labelX, y + barHeight / 2 + 4);
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════
+// INSTRUCTOR: FETCH DATA & ESTIMATE
+// ════════════════════════════════════════════════════════════════════
+function fetchAndEstimate() {
+  if (SCRIPT_URL === 'PASTE_YOUR_APPS_SCRIPT_URL_HERE') {
+    document.getElementById('student-list').innerHTML =
+      '<em style="color:var(--terra);">Apps Script URL not configured. See Setup Instructions below.</em>';
+    return;
+  }
+
+  document.getElementById('btn-refresh').disabled = true;
+  document.getElementById('btn-refresh').textContent = 'Fetching...';
+
+  // JSONP fetch to avoid CORS issues
+  const cbName = '_cb_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
+  window[cbName] = function(data) {
+    delete window[cbName];
+    processInstructorData(data);
+    document.getElementById('btn-refresh').disabled = false;
+    document.getElementById('btn-refresh').textContent = 'Refresh & Estimate';
+  };
+
+  const script = document.createElement('script');
+  script.src = SCRIPT_URL + '?callback=' + cbName;
+  script.onerror = function() {
+    delete window[cbName];
+    document.getElementById('student-list').innerHTML =
+      '<em style="color:var(--terra);">Failed to fetch data. Check your Apps Script URL and deployment.</em>';
+    document.getElementById('btn-refresh').disabled = false;
+    document.getElementById('btn-refresh').textContent = 'Refresh & Estimate';
+  };
+  document.head.appendChild(script);
+  // Clean up script tag after load
+  script.onload = () => { try { script.remove(); } catch(e) {} };
+}
+
+function processInstructorData(responses) {
+  // Filter out bad data
+  const valid = responses.filter(r =>
+    r.choices && r.choices.length === 6 &&
+    r.choices.every(c => c === 0 || c === 1 || c === 2)
+  );
+
+  document.getElementById('resp-count').textContent = valid.length;
+  document.getElementById('obs-count').textContent = valid.length * 6;
+
+  // Student list
+  const listDiv = document.getElementById('student-list');
+  if (valid.length === 0) {
+    listDiv.innerHTML = '<em>No valid responses yet</em>';
+    document.getElementById('dash-waiting').style.display = 'block';
+    document.getElementById('dash-results').style.display = 'none';
+    return;
+  }
+
+  listDiv.innerHTML = valid.map((r, i) =>
+    `<span style="display:inline-block; background:var(--teal-light); padding:3px 10px; border-radius:12px; margin:3px; font-size:0.88em;">${r.studentId || 'Student ' + (i+1)}</span>`
+  ).join('');
+
+  document.getElementById('dash-waiting').style.display = 'none';
+  document.getElementById('dash-results').style.display = 'block';
+
+  // Pooled estimation
+  const { X, y } = buildPooledDataMatrix(valid);
+  // Use less regularization with more data
+  const lambda = valid.length >= 5 ? 0.01 : valid.length >= 2 ? 0.1 : 0.5;
+  const results = estimateMNL(X, y, lambda);
+
+  const varNames = ['Water Clarity (0-2)', 'Trail Miles (2-10)', 'Fish Stocking (0-2)', 'Annual Fee ($)', 'ASC (improvement)'];
+  displayCoefTable('dash-coef-body', results.beta, results.se, varNames);
+
+  document.getElementById('dash-model-fit').innerHTML =
+    `Log-likelihood: ${results.ll.toFixed(3)} | Null LL: ${results.ll0.toFixed(3)} | ` +
+    `McFadden &rho;&sup2;: ${results.rho2.toFixed(3)} | ` +
+    `N: ${results.nObs} choice occasions (${valid.length} respondents &times; 6) | ` +
+    `Ridge &lambda;: ${lambda}`;
+
+  const feeCoef = results.beta[3];
+  document.getElementById('dash-interpret').innerHTML =
+    `<strong>Interpretation:</strong> ` +
+    `Fee coefficient is <strong>${feeCoef < 0 ? 'negative (as expected)' : 'positive (unexpected!)'}</strong>. ` +
+    (feeCoef < 0
+      ? `All attribute signs ${results.beta[0] > 0 && results.beta[1] > 0 && results.beta[2] > 0
+          ? 'are positive — the class prefers clearer water, more trails, and more fish stocking.'
+          : 'should be examined — some may be counterintuitive with small samples.'}`
+      : 'A positive fee coefficient is problematic — more data may be needed.') +
+    (valid.length < 10
+      ? ` With ${valid.length} respondents, estimates will sharpen as more students submit.`
+      : '');
+
+  displayWTPTable('dash-wtp-body', 'dash-wtp-chart', 'dash-total-wtp', 'dash-total-wtp-formula', 'dash-policy',
+    results.beta, results.se);
+}
+
+// ════════════════════════════════════════════════════════════════════
+// AUTO-REFRESH
+// ════════════════════════════════════════════════════════════════════
+function toggleAutoRefresh() {
+  const on = document.getElementById('auto-refresh').checked;
+  const badge = document.getElementById('auto-badge');
+  if (on) {
+    badge.style.display = 'inline-block';
+    autoRefreshTimer = setInterval(fetchAndEstimate, 5000);
+  } else {
+    badge.style.display = 'none';
+    if (autoRefreshTimer) clearInterval(
