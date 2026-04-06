@@ -435,13 +435,18 @@
         <pre style="background:#1e1e1e; color:#d4d4d4; padding:16px; border-radius:8px; overflow-x:auto; font-size:0.82em; line-height:1.5;"><code>function doPost(e) {
   var lock = LockService.getScriptLock();
   lock.tryLock(10000);
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-  var data = JSON.parse(e.postData.contents);
+  var sheet = SpreadsheetApp.getActiveSpreadsheet()
+    .getActiveSheet();
+  // Handle both form POST (e.parameter.data)
+  // and raw POST (e.postData.contents)
+  var raw = e.parameter.data || e.postData.contents;
+  var data = JSON.parse(raw);
   sheet.appendRow([
     new Date().toISOString(),
     data.studentId,
-    data.choices[0], data.choices[1], data.choices[2],
-    data.choices[3], data.choices[4], data.choices[5]
+    data.choices[0], data.choices[1],
+    data.choices[2], data.choices[3],
+    data.choices[4], data.choices[5]
   ]);
   lock.releaseLock();
   return ContentService.createTextOutput(
@@ -450,28 +455,41 @@
 }
 
 function doGet(e) {
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var sheet = SpreadsheetApp.getActiveSpreadsheet()
+    .getActiveSheet();
   var data = sheet.getDataRange().getValues();
   var rows = [];
-  for (var i = 1; i &lt; data.length; i++) {
+  for (var i = 1; i < data.length; i++) {
     rows.push({
       studentId: data[i][1],
       choices: [
-        parseInt(data[i][2]), parseInt(data[i][3]),
-        parseInt(data[i][4]), parseInt(data[i][5]),
-        parseInt(data[i][6]), parseInt(data[i][7])
+        parseInt(data[i][2]),
+        parseInt(data[i][3]),
+        parseInt(data[i][4]),
+        parseInt(data[i][5]),
+        parseInt(data[i][6]),
+        parseInt(data[i][7])
       ]
     });
   }
   var json = JSON.stringify(rows);
   var cb = (e.parameter || {}).callback;
   if (cb) {
-    return ContentService.createTextOutput(cb + '(' + json + ')')
-      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+    return ContentService
+      .createTextOutput(cb + '(' + json + ')')
+      .setMimeType(
+        ContentService.MimeType.JAVASCRIPT);
   }
-  return ContentService.createTextOutput(json)
+  return ContentService
+    .createTextOutput(json)
     .setMimeType(ContentService.MimeType.JSON);
 }</code></pre>
+
+        <div class="note-box" style="margin-top:8px;">
+          <strong>Important:</strong> Copy this code from the <em>rendered page</em> (select and Ctrl+C),
+          NOT from the raw HTML source. The raw source contains HTML entities like <code>&amp;lt;</code>
+          that will break the script if pasted directly.
+        </div>
 
         <p><strong>Step 3 — Deploy:</strong> Click <strong>Deploy &rarr; New deployment</strong>.
         Set type to <strong>Web app</strong>. Set "Execute as" to <strong>Me</strong> and
@@ -650,13 +668,28 @@ async function submitChoices() {
   progEl.style.width = '60%';
   statusEl.textContent = 'Sending to class dataset...';
 
+  // Use hidden iframe + form POST to avoid CORS/redirect issues with Apps Script
   try {
-    await fetch(SCRIPT_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify(payload)
-    });
+    let iframe = document.getElementById('submit-frame');
+    if (!iframe) {
+      iframe = document.createElement('iframe');
+      iframe.id = 'submit-frame';
+      iframe.name = 'submit-frame';
+      iframe.style.display = 'none';
+      document.body.appendChild(iframe);
+    }
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = SCRIPT_URL;
+    form.target = 'submit-frame';
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'data';
+    input.value = JSON.stringify(payload);
+    form.appendChild(input);
+    document.body.appendChild(form);
+    form.submit();
+    form.remove();
   } catch (err) {
     console.warn('Submission may have failed:', err);
   }
@@ -1116,11 +1149,4 @@ function toggleAutoRefresh() {
     autoRefreshTimer = setInterval(fetchAndEstimate, 5000);
   } else {
     badge.style.display = 'none';
-    if (autoRefreshTimer) clearInterval(autoRefreshTimer);
-    autoRefreshTimer = null;
-  }
-}
-
-</script>
-</body>
-</html>
+    if (autoRefreshTimer) clearInterval(
